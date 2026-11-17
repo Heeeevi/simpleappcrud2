@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+
 jobs:
   build-and-deploy:
     name: Build and Deploy Application
@@ -31,14 +32,20 @@ jobs:
 
       - name: Create deployment package
         run: |
-          cp -r .next/standalone deployment-package
-          cp -r .next/static deployment-package/.next/static
-          cp -r public deployment-package/public 2>/dev/null || true
+          mkdir -p deployment-package
+          cp -r .next deployment-package/
+          cp -r public deployment-package/ 2>/dev/null || true
+          cp package*.json deployment-package/
+          cp next.config.js deployment-package/ 2>/dev/null || true
+
+      - name: Install deployement package
+        working-directory: deployment-package
+        run: npm ci --omit=dev
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ vars.WEBAPP_NAME }}
-          slot-name: "Production"
+          slot-name: 'Production'
           package: deployment-package
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
